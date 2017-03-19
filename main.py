@@ -118,11 +118,12 @@ class DendriticTree(object):
     
 def main():
     tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=50)
-    tree.grow(100)
+    tree.grow(1000)
     print("Degree at root:", tree.root.degree)
     print(tree.root.pformat())
     
-    print(counted.counters)
+    print("Function calls", counted.called)
+    print("Function times", counted.timing)
 
 if __name__ == '__main__':
     main()

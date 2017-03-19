@@ -1,3 +1,4 @@
+import time
 from functools import wraps
 from collections import Counter
 
@@ -19,8 +20,14 @@ def counted(f):
     """Count function calls. Simple profiling."""
     @wraps(f)
     def wrapper(*args, **kwargs):
-        counted.counters[f.__name__] += 1
-        return f(*args, **kwargs)
+        start = time.clock()
+        ret = f(*args, **kwargs)
+        end = time.clock()
+        key = f.__name__
+        counted.called[key] += 1
+        counted.timing[key] += end - start
+        return ret
     return wrapper
 
-counted.counters = Counter()
+counted.called = Counter()
+counted.timing = Counter()
