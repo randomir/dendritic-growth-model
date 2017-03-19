@@ -20,17 +20,19 @@ def counted(f):
     """Count function calls. Simple profiling."""
     @wraps(f)
     def wrapper(*args, **kwargs):
+        # for python>3.3, use ``time.perf_counter``
         start = time.clock()
         try:
             return f(*args, **kwargs)
-        except:
+        except Exception as e:
+            counted.exceptions[repr(e)] += 1
             raise
         finally:
             end = time.clock()
-            key = f.__name__
-            counted.called[key] += 1
-            counted.timing[key] += end - start
+            counted.called[f.__name__] += 1
+            counted.timing[f.__name__] += end - start
     return wrapper
 
 counted.called = Counter()
 counted.timing = Counter()
+counted.exceptions = Counter()
