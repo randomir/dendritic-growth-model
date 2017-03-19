@@ -1,4 +1,5 @@
 from functools import wraps
+from collections import Counter
 
 
 def memoized(f):
@@ -12,3 +13,14 @@ def memoized(f):
         return memo[key]
     wrapper.uncache = memo.clear
     return wrapper
+
+
+def counted(f):
+    """Count function calls. Simple profiling."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        counted.counters[f.__name__] += 1
+        return f(*args, **kwargs)
+    return wrapper
+
+counted.counters = Counter()

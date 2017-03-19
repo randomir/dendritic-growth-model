@@ -9,6 +9,8 @@ import math
 import random
 import textwrap
 
+from utils import counted
+
 
 class Segment(object):
     # segment's level in the dendritic tree (gamma param in [1])
@@ -34,6 +36,7 @@ class Segment(object):
     def total_len(self):
         return self.initial_len + self.elongated_len
     
+    @counted
     def __init__(self, dendrite, order=0, parent=None):
         self.dendrite = dendrite
         self.parent = parent
@@ -45,6 +48,7 @@ class Segment(object):
             s += math.pow(2, -self.dendrite.parameters['S'] * terminal.centrifugal_order)
         return len(self.dendrite.terminal_segments) / s
 
+    @counted
     def branch(self):
         if self.children:
             return
@@ -68,6 +72,7 @@ class Segment(object):
         self.dendrite.terminal_segments.remove(self)
         self.dendrite.terminal_segments.update(self.children)
 
+    @counted
     def update_degree(self):
         if self.children:
             self.degree = sum([c.degree for c in self.children])
@@ -113,10 +118,11 @@ class DendriticTree(object):
     
 def main():
     tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=50)
-    tree.grow(1000)
+    tree.grow(100)
     print("Degree at root:", tree.root.degree)
-    print("Number of terminal segments:", len(tree.terminal_segments))
-    #print(tree.root.pformat())
+    print(tree.root.pformat())
+    
+    print(counted.counters)
 
 if __name__ == '__main__':
     main()
