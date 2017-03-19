@@ -19,7 +19,7 @@ class Segment(object):
     dendrite = None
     
     # list of daughter segments
-    children = None
+    children = []
 
     initial_len = 0
     elongated_len = 0
@@ -59,13 +59,23 @@ class Segment(object):
         self.dendrite.terminal_segments.remove(self)
         self.dendrite.terminal_segments.update(self.children)
 
+    @property
+    def degree(self):
+        """The number of terminal segments in a subtree rooted at this segment.
+        TODO: memoize; on child insert - update degrees on all segments on path to root
+        """
+        if not self.children:
+            # terminal segment has a degree of 1
+            return 1
+        return sum([c.degree for c in self.children])
+
     def pformat(self):
         if self.children:
             children = textwrap.indent(",\n".join([c.pformat() for c in self.children]), prefix=" "*4)
             children = "\n%s\n" % children
         else:
             children = ""
-        return "Segment(order=%s, children=[%s])" % (self.centrifugal_order, children)
+        return "Segment(order=%s, degree=%s, children=[%s])" % (self.centrifugal_order, self.degree, children)
 
 
 class DendriticTree(object):
@@ -97,6 +107,7 @@ class DendriticTree(object):
 def main():
     tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=5)
     tree.grow(10)
+    print("Degree at root:", tree.root.degree)
     print(tree.root.pformat())
 
 if __name__ == '__main__':
