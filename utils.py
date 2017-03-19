@@ -21,12 +21,15 @@ def counted(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         start = time.clock()
-        ret = f(*args, **kwargs)
-        end = time.clock()
-        key = f.__name__
-        counted.called[key] += 1
-        counted.timing[key] += end - start
-        return ret
+        try:
+            return f(*args, **kwargs)
+        except:
+            raise
+        finally:
+            end = time.clock()
+            key = f.__name__
+            counted.called[key] += 1
+            counted.timing[key] += end - start
     return wrapper
 
 counted.called = Counter()
