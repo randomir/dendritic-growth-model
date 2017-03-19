@@ -13,13 +13,20 @@ import textwrap
 class Segment(object):
     # segment's level in the dendritic tree (gamma param in [1])
     centrifugal_order = 0
+    
+    # segment's degree: the number of terminal segments in a subtree rooted at this segment.
+    # if segment is a terminal segment, it has a degree of one
+    degree = 1
 
     # link to root / dendrite tree
     # (holds growth params and current tree properties, like number of terminal segments)
     dendrite = None
     
+    # link to parent, for easier traversal
+    parent = None
+    
     # list of daughter segments
-    children = []
+    children = None
 
     initial_len = 0
     elongated_len = 0
@@ -27,8 +34,9 @@ class Segment(object):
     def total_len(self):
         return self.initial_len + self.elongated_len
     
-    def __init__(self, dendrite, order=0):
+    def __init__(self, dendrite, order=0, parent=None):
         self.dendrite = dendrite
+        self.parent = parent
         self.centrifugal_order = order
 
     def branching_probability_normalization_constant(self):
@@ -54,20 +62,19 @@ class Segment(object):
             # no branching
             return
         
-        self.children = [Segment(self.dendrite, self.centrifugal_order + 1),
-                         Segment(self.dendrite, self.centrifugal_order + 1)]
+        self.children = [Segment(self.dendrite, self.centrifugal_order + 1, self),
+                         Segment(self.dendrite, self.centrifugal_order + 1, self)]
+        self.update_degree()
         self.dendrite.terminal_segments.remove(self)
         self.dendrite.terminal_segments.update(self.children)
 
-    @property
-    def degree(self):
-        """The number of terminal segments in a subtree rooted at this segment.
-        TODO: memoize; on child insert - update degrees on all segments on path to root
-        """
-        if not self.children:
-            # terminal segment has a degree of 1
-            return 1
-        return sum([c.degree for c in self.children])
+    def update_degree(self):
+        if self.children:
+            self.degree = sum([c.degree for c in self.children])
+        else:
+            self.degree = 1
+        if self.parent:
+            self.parent.update_degree()
 
     def pformat(self):
         if self.children:
@@ -103,12 +110,13 @@ class DendriticTree(object):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch()
 
-
+    
 def main():
-    tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=5)
-    tree.grow(10)
+    tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=50)
+    tree.grow(1000)
     print("Degree at root:", tree.root.degree)
-    print(tree.root.pformat())
+    print("Number of terminal segments:", len(tree.terminal_segments))
+    #print(tree.root.pformat())
 
 if __name__ == '__main__':
     main()
