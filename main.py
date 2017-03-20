@@ -190,17 +190,26 @@ def simulate_and_measure(params):
         degree=tree.degree,
         depth=tree.depth,
         asymmetry_index=tree.asymmetry_index,
-        total_length=tree.total_length
+        total_length=tree.total_length,
+        terminal_lengths=[s.total_len for s in tree.terminal_segments],
+        intermediate_lengths=[s.total_len for s in tree.intermediate_segments]
     )
 
 
 def simulate(n, params):
+    def add_maybe_lists(x, y):
+        if not isinstance(x, list):
+            x = [x]
+        if not isinstance(y, list):
+            y = [y]
+        return x + y
+
     sums = {}
     for i in range(n):
         measures = simulate_and_measure(params)
-        print("Tree %d measures:" % i, measures)
-        sums = merge(sums, measures, lambda x, y: x + [y] if isinstance(x, list) else [x, y])
-    
+        #print("Tree %d measures:" % i, measures)
+        sums = merge(sums, measures, add_maybe_lists)
+
     stats = {}
     for k, v in sums.items():
         stats[k] = dict(total=sum(v),
