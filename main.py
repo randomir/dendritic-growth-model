@@ -68,21 +68,21 @@ class Segment(object):
         s = 0
         for terminal in self.dendrite.terminal_segments:
             s += math.pow(2, -self.dendrite.parameters['S'] * terminal.order)
-        return len(self.dendrite.terminal_segments) / s
+        return s / len(self.dendrite.terminal_segments)
 
     @counted
     def branch(self):
         if self.children:
             return
         
-        C = self.branching_probability_normalization_constant()
+        Cinv = self.branching_probability_normalization_constant()
         B = self.dendrite.parameters['B']
         E = self.dendrite.parameters['E']
         S = self.dendrite.parameters['S']
         N = self.dendrite.parameters['N']
         n_i = len(self.dendrite.terminal_segments)
         gamma = self.order
-        p_i = C * math.pow(2, -S * gamma) * B / N / math.pow(n_i, E)
+        p_i = math.pow(2, -S * gamma) * B / Cinv / N / math.pow(n_i, E)
         
         if random.random() > p_i:
             # no branching
@@ -143,15 +143,27 @@ class DendriticTree(object):
     def asymmetry_index(self):
         """Tree asymmetry index A_t, defined in chapter 7.1.1 in [1] is a mean
         value of all n - 1 partition asymmetries at n - 1 bifurcation points (at
-        the ends of intermediate segments)."""
+        the ends of intermediate segments).
+        Value is between 0 and 1, with:
+            0 = complete symmetry (full binary tree)
+            1 = complete asymmetry (list)
+        """
         assert len(self.intermediate_segments) == len(self.terminal_segments) - 1
+        if len(self.intermediate_segments) < 1:
+            return 0
         s = sum([i.partition_asymmetry for i in self.intermediate_segments])
         return s / len(self.intermediate_segments)
 
     
 def main():
-    tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=50)
-    tree.grow(1000)
+    # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
+    tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
+    tree.grow(312)
+
+    # Guinea Pig Purkinje Cell Dendritic Tree
+    # tree = DendriticTree(B=95, E=0.69, S=-0.14, N=50)
+    # tree.grow(50)
+
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
     print("Tree asymmetry index:", tree.asymmetry_index)
