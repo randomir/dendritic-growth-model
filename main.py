@@ -13,8 +13,8 @@ from utils import counted
 
 
 class Segment(object):
-    # segment's level in the dendritic tree (gamma param in [1])
-    centrifugal_order = 0
+    # segment's level in the dendritic tree ("centrifugal order" in [1], represented with gamma)
+    order = 0
     
     # segment's degree: the number of terminal segments in a subtree rooted at this segment.
     # if segment is a terminal segment, it has a degree of one
@@ -62,12 +62,12 @@ class Segment(object):
     def __init__(self, dendrite, order=0, parent=None):
         self.dendrite = dendrite
         self.parent = parent
-        self.centrifugal_order = order
+        self.order = order
 
     def branching_probability_normalization_constant(self):
         s = 0
         for terminal in self.dendrite.terminal_segments:
-            s += math.pow(2, -self.dendrite.parameters['S'] * terminal.centrifugal_order)
+            s += math.pow(2, -self.dendrite.parameters['S'] * terminal.order)
         return len(self.dendrite.terminal_segments) / s
 
     @counted
@@ -81,15 +81,15 @@ class Segment(object):
         S = self.dendrite.parameters['S']
         N = self.dendrite.parameters['N']
         n_i = len(self.dendrite.terminal_segments)
-        gamma = self.centrifugal_order
+        gamma = self.order
         p_i = C * math.pow(2, -S * gamma) * B / N / math.pow(n_i, E)
         
         if random.random() > p_i:
             # no branching
             return
         
-        self.children = [Segment(self.dendrite, self.centrifugal_order + 1, self),
-                         Segment(self.dendrite, self.centrifugal_order + 1, self)]
+        self.children = [Segment(self.dendrite, self.order + 1, self),
+                         Segment(self.dendrite, self.order + 1, self)]
         self.update_degree()
         self.dendrite.terminal_segments.remove(self)
         self.dendrite.intermediate_segments.add(self)
@@ -110,7 +110,7 @@ class Segment(object):
             children = "\n%s\n" % children
         else:
             children = ""
-        return "Segment(order=%s, degree=%s, children=[%s])" % (self.centrifugal_order, self.degree, children)
+        return "Segment(order=%s, degree=%s, children=[%s])" % (self.order, self.degree, children)
 
 
 class DendriticTree(object):
