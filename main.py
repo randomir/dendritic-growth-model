@@ -158,6 +158,10 @@ class DendriticTree(object):
         return self.root.degree
 
     @property
+    def depth(self):
+        return max([s.order for s in self.terminal_segments])
+
+    @property
     def asymmetry_index(self):
         """Tree asymmetry index A_t, defined in chapter 7.1.1 in [1] is a mean
         value of all n - 1 partition asymmetries at n - 1 bifurcation points (at
@@ -184,6 +188,7 @@ def simulate_and_measure(params):
     tree.grow(params.get('N'))
     return dict(
         degree=tree.degree,
+        depth=tree.depth,
         asymmetry_index=tree.asymmetry_index,
         total_length=tree.total_length
     )
@@ -223,6 +228,7 @@ def main():
     print("Function times", counted.timing)
 
 if __name__ == '__main__':
-    #main()
+    # main()
     stats = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
+    print("Tree simulation stats:")
     pprint(stats)
