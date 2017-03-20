@@ -4,10 +4,13 @@ Dendritic Geometry Model, described by Jaap van Pelt et al. in [1], chapter 7.1.
 [1] Computational neuroscience: Realistic modeling for experimentalists,
 edited by Erik De Schutter, 2001, CRC Press.
 """
-# -*- python-version >= 3.3 -*-
+# -*- python-version >= 3.4 -*-
 import math
 import random
 import textwrap
+import statistics
+from pprint import pprint
+
 from plucky import merge
 
 from utils import counted
@@ -192,7 +195,14 @@ def simulate(n, params):
         measures = simulate_and_measure(params)
         print("Tree %d measures:" % i, measures)
         sums = merge(sums, measures, lambda x, y: x + [y] if isinstance(x, list) else [x, y])
-    return sums
+    
+    stats = {}
+    for k, v in sums.items():
+        stats[k] = dict(total=sum(v),
+                        mean=statistics.mean(v),
+                        median=statistics.median(v),
+                        stdev=statistics.stdev(v))
+    return stats
 
 
 def main():
@@ -214,5 +224,5 @@ def main():
 
 if __name__ == '__main__':
     #main()
-    totals = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
-    print("Tree totals:", totals)
+    stats = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
+    pprint(stats)
