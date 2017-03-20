@@ -35,6 +35,28 @@ class Segment(object):
     @property
     def total_len(self):
         return self.initial_len + self.elongated_len
+
+    @property
+    def is_terminal(self):
+        """Is this segment a terminal segment? Segment can have zero, or two
+        children, being a terminal, or an intermediate segment, respectively."""
+        return len(self.children) == 0
+
+    @property
+    def is_intermediate(self):
+        return len(self.children) == 2
+
+    @property
+    def partition_asymmetry(self):
+        """The partition asymmetry A_p at a bifurcation is defined as:
+        A_p(r, s) = |r - s|/(r + s - 2), for r + r > 2
+        A_p(1, 1) = 0
+        """
+        if self.is_intermediate:
+            r, s = self.children[0].degree, self.children[1].degree
+            if r + s > 2:
+                return math.fabs(r - s) / (r + s - 2)
+        return 0
     
     @counted
     def __init__(self, dendrite, order=0, parent=None):
@@ -70,6 +92,7 @@ class Segment(object):
                          Segment(self.dendrite, self.centrifugal_order + 1, self)]
         self.update_degree()
         self.dendrite.terminal_segments.remove(self)
+        self.dendrite.intermediate_segments.add(self)
         self.dendrite.terminal_segments.update(self.children)
 
     @counted
@@ -93,6 +116,7 @@ class Segment(object):
 class DendriticTree(object):
     parameters = {}
     terminal_segments = set()
+    intermediate_segments = set()
     root = None
 
     def __init__(self, B, E, S, N):
@@ -115,13 +139,23 @@ class DendriticTree(object):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch()
 
+    @property
+    def asymmetry_index(self):
+        """Tree asymmetry index A_t, defined in chapter 7.1.1 in [1] is a mean
+        value of all n - 1 partition asymmetries at n - 1 bifurcation points (at
+        the ends of intermediate segments)."""
+        assert len(self.intermediate_segments) == len(self.terminal_segments) - 1
+        s = sum([i.partition_asymmetry for i in self.intermediate_segments])
+        return s / len(self.intermediate_segments)
+
     
 def main():
     tree = DendriticTree(B=2.5, E=0.7, S=0.5, N=50)
     tree.grow(1000)
-    print("Degree at root:", tree.root.degree)
     print(tree.root.pformat())
-    
+    print("Degree at root:", tree.root.degree)
+    print("Tree asymmetry index:", tree.asymmetry_index)
+
     print("Function calls", counted.called)
     print("Function times", counted.timing)
 
