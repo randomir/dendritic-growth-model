@@ -8,6 +8,7 @@ edited by Erik De Schutter, 2001, CRC Press.
 import math
 import random
 import textwrap
+from plucky import merge
 
 from utils import counted
 
@@ -186,10 +187,12 @@ def simulate_and_measure(params):
 
 
 def simulate(n, params):
-    aggregate_measures = {}
+    sums = {}
     for i in range(n):
         measures = simulate_and_measure(params)
-        print("Tree measures:", measures)
+        print("Tree %d measures:" % i, measures)
+        sums = merge(sums, measures, lambda x, y: x + [y] if isinstance(x, list) else [x, y])
+    return sums
 
 
 def main():
@@ -211,4 +214,5 @@ def main():
 
 if __name__ == '__main__':
     #main()
-    simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
+    totals = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
+    print("Tree totals:", totals)
