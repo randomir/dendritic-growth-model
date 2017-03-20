@@ -121,9 +121,9 @@ class Segment(object):
 
 
 class DendriticTree(object):
-    parameters = {}
-    terminal_segments = set()
-    intermediate_segments = set()
+    parameters = None
+    terminal_segments = None
+    intermediate_segments = None
     root = None
 
     def __init__(self, B, E, S, N, offset_in, mean_in, sd_in):
@@ -139,6 +139,8 @@ class DendriticTree(object):
             offset_in=offset_in, mean_in=mean_in, sd_in=sd_in,
             alpha_in=offset_in, beta_in=(sd_in**2/mean_in), gamma_in=(mean_in/sd_in)**2
         )
+        self.terminal_segments = set()
+        self.intermediate_segments = set()
         self.root = Segment(self)
         self.terminal_segments.add(self.root)
 
@@ -146,6 +148,10 @@ class DendriticTree(object):
         for i in range(n):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch()
+
+    @property
+    def degree(self):
+        return self.root.degree
 
     @property
     def asymmetry_index(self):
@@ -169,6 +175,23 @@ class DendriticTree(object):
         return int_seg + term_seg
 
 
+def simulate_and_measure(params):
+    tree = DendriticTree(**params)
+    tree.grow(params.get('N'))
+    return dict(
+        degree=tree.degree,
+        asymmetry_index=tree.asymmetry_index,
+        total_length=tree.total_length
+    )
+
+
+def simulate(n, params):
+    aggregate_measures = {}
+    for i in range(n):
+        measures = simulate_and_measure(params)
+        print("Tree measures:", measures)
+
+
 def main():
     # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
     # tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
@@ -187,4 +210,5 @@ def main():
     print("Function times", counted.timing)
 
 if __name__ == '__main__':
-    main()
+    #main()
+    simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
