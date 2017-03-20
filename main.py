@@ -162,7 +162,13 @@ class DendriticTree(object):
         s = sum([i.partition_asymmetry for i in self.intermediate_segments])
         return s / len(self.intermediate_segments)
 
-    
+    @property
+    def total_length(self):
+        int_seg = sum([s.total_len for s in self.intermediate_segments])
+        term_seg = sum([s.total_len for s in self.terminal_segments])
+        return int_seg + term_seg
+
+
 def main():
     # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
     # tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
@@ -175,6 +181,7 @@ def main():
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
     print("Tree asymmetry index:", tree.asymmetry_index)
+    print("Total length:", tree.total_length)
 
     print("Function calls", counted.called)
     print("Function times", counted.timing)
