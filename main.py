@@ -63,6 +63,7 @@ class Segment(object):
         self.dendrite = dendrite
         self.parent = parent
         self.order = order
+        self.grow_initial()
 
     def branching_probability_normalization_constant(self):
         s = 0
@@ -95,6 +96,12 @@ class Segment(object):
         self.dendrite.intermediate_segments.add(self)
         self.dendrite.terminal_segments.update(self.children)
 
+    def grow_initial(self):
+        """Sample from initial segment length gamma distribution, and apply to
+        ``self.initial_len``."""
+        p = self.dendrite.parameters
+        self.initial_len = random.gammavariate(p['gamma_in'], p['beta_in']) + p['alpha_in']
+
     @counted
     def update_degree(self):
         if self.children:
@@ -110,7 +117,7 @@ class Segment(object):
             children = "\n%s\n" % children
         else:
             children = ""
-        return "Segment(order=%s, degree=%s, children=[%s])" % (self.order, self.degree, children)
+        return "Segment(order=%s, degree=%s, len=%.4f, children=[%s])" % (self.order, self.degree, self.total_len, children)
 
 
 class DendriticTree(object):
@@ -119,7 +126,7 @@ class DendriticTree(object):
     intermediate_segments = set()
     root = None
 
-    def __init__(self, B, E, S, N):
+    def __init__(self, B, E, S, N, offset_in, mean_in, sd_in):
         """
         Parameters:
         - B: Basic branching parameter ~ expected number of branching events at an isolated segment
@@ -128,8 +135,9 @@ class DendriticTree(object):
         - N: total number of time bins in the full period of development
         """
         self.parameters = dict(
-            B=B, E=E, S=S,
-            N=N
+            B=B, E=E, S=S, N=N,
+            offset_in=offset_in, mean_in=mean_in, sd_in=sd_in,
+            alpha_in=offset_in, beta_in=(sd_in**2/mean_in), gamma_in=(mean_in/sd_in)**2
         )
         self.root = Segment(self)
         self.terminal_segments.add(self.root)
@@ -157,12 +165,12 @@ class DendriticTree(object):
     
 def main():
     # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
-    tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
-    tree.grow(312)
+    # tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
+    # tree.grow(312)
 
     # Guinea Pig Purkinje Cell Dendritic Tree
-    # tree = DendriticTree(B=95, E=0.69, S=-0.14, N=50)
-    # tree.grow(50)
+    tree = DendriticTree(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53)
+    tree.grow(10)
 
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
