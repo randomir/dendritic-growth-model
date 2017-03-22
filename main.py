@@ -130,7 +130,10 @@ class DendriticTree(object):
     intermediate_segments = None
     root = None
 
-    def __init__(self, B, E, S, N, offset_in, mean_in, sd_in):
+    def __init__(self, B, E, S, N,
+                 offset_in=0, mean_in=1, sd_in=1,
+                 offset_be=0, mean_be=1, sd_be=1,
+                 offset_e=0, mean_e=1, sd_e=1):
         """
         Parameters:
         - B: Basic branching parameter ~ expected number of branching events at an isolated segment
@@ -140,8 +143,18 @@ class DendriticTree(object):
         """
         self.parameters = dict(
             B=B, E=E, S=S, N=N,
+
+            # initial elongation, gamma distribution params:
             offset_in=offset_in, mean_in=mean_in, sd_in=sd_in,
-            alpha_in=offset_in, beta_in=(sd_in**2/mean_in), gamma_in=(mean_in/sd_in)**2
+            alpha_in=offset_in, beta_in=(sd_in**2/mean_in), gamma_in=(mean_in/sd_in)**2,
+
+            # sustained elongation in "branching/elongation phase", gamma distribution params:
+            offset_be=offset_be, mean_be=mean_be, sd_be=sd_be,
+            alpha_be=offset_be, beta_be=(sd_be**2/mean_be), gamma_be=(mean_be/sd_be)**2,
+
+            # subsequent elongation in "elongation phase", gamma distribution params:
+            offset_e=offset_e, mean_e=mean_e, sd_e=sd_e,
+            alpha_e=offset_e, beta_e=(sd_e**2/mean_e), gamma_e=(mean_e/sd_e)**2,
         )
         self.terminal_segments = set()
         self.intermediate_segments = set()
@@ -225,7 +238,12 @@ def main():
     # tree.grow(312)
 
     # Guinea Pig Purkinje Cell Dendritic Tree
-    tree = DendriticTree(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53)
+    tree = DendriticTree(
+        B=95, E=0.69, S=-0.14, N=10,
+        offset_in=0.7, mean_in=10.63, sd_in=7.53,
+        offset_be=0, mean_be=0.2, sd_be=0.2*0.47,
+        offset_e=0, mean_e=0.86, sd_e=0.86*0.47
+    )
     tree.grow(10)
 
     print(tree.root.pformat())
@@ -233,11 +251,11 @@ def main():
     print("Tree asymmetry index:", tree.asymmetry_index)
     print("Total length:", tree.total_length)
 
-    print("Function calls", counted.called)
-    print("Function times", counted.timing)
+    #print("Function calls", counted.called)
+    #print("Function times", counted.timing)
 
 if __name__ == '__main__':
     # main()
-    stats = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53))
+    stats = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53, offset_be=0, mean_be=0.2, sd_be=0.2*0.47, offset_e=0, mean_e=0.86, sd_e=0.86*0.47))
     print("Tree simulation stats:")
     pprint(stats)
