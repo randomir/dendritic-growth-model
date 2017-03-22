@@ -209,7 +209,7 @@ def simulate_and_measure(params):
     )
 
 
-def simulate(n, params):
+def simulate(params, n):
     def add_maybe_lists(x, y):
         if not isinstance(x, list):
             x = [x]
@@ -232,19 +232,12 @@ def simulate(n, params):
     return stats
 
 
-def main():
-    # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
-    # tree = DendriticTree(B=2.52, E=0.73, S=0.5, N=312)
-    # tree.grow(312)
 
-    # Guinea Pig Purkinje Cell Dendritic Tree
-    tree = DendriticTree(
-        B=95, E=0.69, S=-0.14, N=10,
-        offset_in=0.7, mean_in=10.63, sd_in=7.53,
-        offset_be=0, mean_be=0.2, sd_be=0.2*0.47,
-        offset_e=0, mean_e=0.86, sd_e=0.86*0.47
-    )
-    tree.grow(10)
+# testing
+
+def run_single(params):
+    tree = DendriticTree(**params)
+    tree.grow(params['N'])
 
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
@@ -254,8 +247,27 @@ def main():
     #print("Function calls", counted.called)
     #print("Function times", counted.timing)
 
-if __name__ == '__main__':
-    # main()
-    stats = simulate(10, dict(B=95, E=0.69, S=-0.14, N=10, offset_in=0.7, mean_in=10.63, sd_in=7.53, offset_be=0, mean_be=0.2, sd_be=0.2*0.47, offset_e=0, mean_e=0.86, sd_e=0.86*0.47))
-    print("Tree simulation stats:")
+
+def run_multi(params, n):
+    stats = simulate(params, n)
+    print("Tree simulation stats (%d trees):" % n)
     pprint(stats)
+
+
+if __name__ == '__main__':
+    # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
+    pyramidal_params = dict(
+        B=2.52, E=0.73, S=0.5, N=312,
+        offset_in=0, mean_in=6, sd_in=5,
+        offset_be=0, mean_be=0.2, sd_be=0.2*0.47,
+        offset_e=0, mean_e=0.86, sd_e=0.86*0.47
+    )
+
+    # Guinea Pig Purkinje Cell Dendritic Tree
+    purkinje_params = dict(
+        B=95, E=0.69, S=-0.14, N=10,
+        offset_in=0.7, mean_in=10.63, sd_in=7.53
+    )
+
+    run_single(purkinje_params)
+    #run_multi(purkinje_params, 10)
