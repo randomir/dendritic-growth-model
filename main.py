@@ -88,10 +88,10 @@ class Segment(object):
         B = self.dendrite.parameters['B']
         E = self.dendrite.parameters['E']
         S = self.dendrite.parameters['S']
-        N = self.dendrite.parameters['N']
+        N_be = self.dendrite.parameters['N_be']
         n_i = len(self.dendrite.terminal_segments)
         gamma = self.order
-        p_i = math.pow(2, -S * gamma) * B / Cinv / N / math.pow(n_i, E)
+        p_i = math.pow(2, -S * gamma) * B / Cinv / N_be / math.pow(n_i, E)
         
         if random.random() > p_i:
             # no branching
@@ -112,11 +112,18 @@ class Segment(object):
         self.initial_len = random.gammavariate(p['gamma_in'], p['beta_in']) + p['alpha_in']
 
     def grow_sustained(self, t):
-        """Sample segment elongation rate from branch/elongate phase gamma distribution,
+        """Sample segment elongation rate from "branch/elongate phase" gamma distribution,
         and apply to ``self.elongated_len``."""
         p = self.dendrite.parameters
         rate = random.gammavariate(p['gamma_be'], p['beta_be']) + p['alpha_be']
         self.elongated_len = rate * (t - self.created - 1)
+
+    def grow_only(self, dt):
+        """Sample segment elongation rate from "elongate phase" gamma distribution,
+        and add to ``self.elongated_len``."""
+        p = self.dendrite.parameters
+        rate = random.gammavariate(p['gamma_e'], p['beta_e']) + p['alpha_e']
+        self.elongated_len += rate * dt
 
     @counted
     def update_degree(self):
@@ -144,7 +151,7 @@ class DendriticTree(object):
     intermediate_segments = None
     root = None
 
-    def __init__(self, B, E, S, N,
+    def __init__(self, B, E, S, N_be, N_e=0,
                  offset_in=0, mean_in=1, sd_in=1,
                  offset_be=0, mean_be=1, sd_be=1,
                  offset_e=0, mean_e=1, sd_e=1):
@@ -153,10 +160,14 @@ class DendriticTree(object):
         - B: Basic branching parameter ~ expected number of branching events at an isolated segment
         - E: Size-dependency in branching ~ branching probability decrease rate coupling with number of existing segments
         - S: Order-dependency in branching ~ symmetry coefficient
-        - N: total number of time bins in the full period of development
+        - N_be: total number of time bins in the branching and elongation phase
+        - N_e: total number of time bins in the elongation phase
+        - {offset,mean,sd}_in: gamma distribution params for initial segment lengths
+        - {offset,mean,sd}_be: gamma distribution params for sustained segment elongation rate during branching and elongation phase
+        - {offset,mean,sd}_e: gamma distribution params for segment elongation rate during elongation only phase
         """
         self.parameters = dict(
-            B=B, E=E, S=S, N=N,
+            B=B, E=E, S=S, N_be=N_be, N_e=N_e,
 
             # initial elongation, gamma distribution params:
             offset_in=offset_in, mean_in=mean_in, sd_in=sd_in,
@@ -175,10 +186,17 @@ class DendriticTree(object):
         self.root = Segment(self)
         self.terminal_segments.add(self.root)
 
-    def grow(self, n):
-        for i in range(n):
+    def grow(self, N_be, N_e):
+        """Grow this tree: ``N_be`` iterations of branching and elongation on terminal
+        segments, followed by ``N_e`` iterations of elongation only of terminal segments.
+        """
+        # branching and elongation, N_be time bins
+        for i in range(N_be):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch(i)
+        # elongation only, N_e time bins
+        for terminal in self.terminal_segments:
+            terminal.grow_only(N_e)
 
     @property
     def degree(self):
@@ -212,7 +230,7 @@ class DendriticTree(object):
 
 def simulate_and_measure(params):
     tree = DendriticTree(**params)
-    tree.grow(params.get('N'))
+    tree.grow(params.get('N_be'), params.get('N_e'))
     return dict(
         degree=tree.degree,
         depth=tree.depth,
@@ -251,7 +269,7 @@ def simulate(params, n):
 
 def run_single(params):
     tree = DendriticTree(**params)
-    tree.grow(params['N'])
+    tree.grow(params['N_be'], params['N_e'])
 
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
@@ -271,7 +289,7 @@ def run_multi(params, n):
 if __name__ == '__main__':
     # S1-Rat Cortical Layer 2/3 Pyramidal Cell Basal Dendrites
     pyramidal_params = dict(
-        B=2.52, E=0.73, S=0.5, N=312,
+        B=2.52, E=0.73, S=0.5, N_be=312, N_e=96,
         offset_in=0, mean_in=6, sd_in=5,
         offset_be=0, mean_be=0.2, sd_be=0.2*0.47,
         offset_e=0, mean_e=0.86, sd_e=0.86*0.47
@@ -279,9 +297,9 @@ if __name__ == '__main__':
 
     # Guinea Pig Purkinje Cell Dendritic Tree
     purkinje_params = dict(
-        B=95, E=0.69, S=-0.14, N=10,
+        B=95, E=0.69, S=-0.14, N_be=10, N_e=0,
         offset_in=0.7, mean_in=10.63, sd_in=7.53
     )
 
     run_single(pyramidal_params)
-    #run_multi(pyramidal_params, 1000)
+    run_multi(pyramidal_params, 1000)
