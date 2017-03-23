@@ -263,7 +263,7 @@ def simulate(params, n):
     for i in range(n):
         measures = simulate_and_measure(params)
         #print("Tree %d measures:" % i, measures)
-        sums = merge(sums, measures, add_maybe_lists)
+        sums = merge(sums, measures, add_maybe_lists, recurse_list=False)
 
     stats = {}
     for k, v in sums.items():
