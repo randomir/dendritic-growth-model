@@ -33,6 +33,9 @@ class Segment(object):
     
     # list of daughter segments
     children = None
+    
+    # time of segment creation (time bin index)
+    created = None
 
     initial_len = 0
     elongated_len = 0
@@ -63,10 +66,11 @@ class Segment(object):
         return 0
     
     @counted
-    def __init__(self, dendrite, order=0, parent=None):
+    def __init__(self, dendrite, order=0, parent=None, t=0):
         self.dendrite = dendrite
         self.parent = parent
         self.order = order
+        self.created = t
         self.grow_initial()
 
     def branching_probability_normalization_constant(self):
@@ -76,7 +80,7 @@ class Segment(object):
         return s / len(self.dendrite.terminal_segments)
 
     @counted
-    def branch(self):
+    def branch(self, t):
         if self.children:
             return
         
@@ -93,8 +97,9 @@ class Segment(object):
             # no branching
             return
         
-        self.children = [Segment(self.dendrite, self.order + 1, self),
-                         Segment(self.dendrite, self.order + 1, self)]
+        self.grow_sustained(t)
+        self.children = [Segment(self.dendrite, self.order + 1, self, t),
+                         Segment(self.dendrite, self.order + 1, self, t)]
         self.update_degree()
         self.dendrite.terminal_segments.remove(self)
         self.dendrite.intermediate_segments.add(self)
@@ -105,6 +110,13 @@ class Segment(object):
         ``self.initial_len``."""
         p = self.dendrite.parameters
         self.initial_len = random.gammavariate(p['gamma_in'], p['beta_in']) + p['alpha_in']
+
+    def grow_sustained(self, t):
+        """Sample segment elongation rate from branch/elongate phase gamma distribution,
+        and apply to ``self.elongated_len``."""
+        p = self.dendrite.parameters
+        rate = random.gammavariate(p['gamma_be'], p['beta_be']) + p['alpha_be']
+        self.elongated_len = rate * (t - self.created - 1)
 
     @counted
     def update_degree(self):
@@ -121,7 +133,9 @@ class Segment(object):
             children = "\n%s\n" % children
         else:
             children = ""
-        return "Segment(order=%s, degree=%s, len=%.4f, children=[%s])" % (self.order, self.degree, self.total_len, children)
+        return "Segment(order=%s, degree=%s, initial_len=%.4f, elongated_len=%.4f, total_len=%.4f, t_created=%d, children=[%s])" % (
+            self.order, self.degree, self.initial_len, self.elongated_len, self.total_len, self.created, children
+        )
 
 
 class DendriticTree(object):
@@ -164,7 +178,7 @@ class DendriticTree(object):
     def grow(self, n):
         for i in range(n):
             for terminal in frozenset(self.terminal_segments):
-                terminal.branch()
+                terminal.branch(i)
 
     @property
     def degree(self):
@@ -269,5 +283,5 @@ if __name__ == '__main__':
         offset_in=0.7, mean_in=10.63, sd_in=7.53
     )
 
-    run_single(purkinje_params)
-    #run_multi(purkinje_params, 10)
+    run_single(pyramidal_params)
+    #run_multi(pyramidal_params, 1000)
