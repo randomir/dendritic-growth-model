@@ -186,14 +186,20 @@ class DendriticTree(object):
         self.root = Segment(self)
         self.terminal_segments.add(self.root)
 
-    def grow(self, N_be, N_e):
+    def grow(self, N_be=None, N_e=None):
         """Grow this tree: ``N_be`` iterations of branching and elongation on terminal
         segments, followed by ``N_e`` iterations of elongation only of terminal segments.
         """
+        if N_be is None:
+            N_be = self.parameters['N_be']
+        if N_e is None:
+            N_e = self.parameters['N_e']
+
         # branching and elongation, N_be time bins
         for i in range(N_be):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch(i)
+
         # elongation only, N_e time bins
         for terminal in self.terminal_segments:
             terminal.grow_only(N_e)
@@ -230,7 +236,7 @@ class DendriticTree(object):
 
 def simulate_and_measure(params):
     tree = DendriticTree(**params)
-    tree.grow(params.get('N_be'), params.get('N_e'))
+    tree.grow()
     return dict(
         degree=tree.degree,
         depth=tree.depth,
@@ -269,7 +275,7 @@ def simulate(params, n):
 
 def run_single(params):
     tree = DendriticTree(**params)
-    tree.grow(params['N_be'], params['N_e'])
+    tree.grow()
 
     print(tree.root.pformat())
     print("Degree at root:", tree.root.degree)
