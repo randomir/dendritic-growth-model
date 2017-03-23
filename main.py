@@ -200,6 +200,10 @@ class DendriticTree(object):
             for terminal in frozenset(self.terminal_segments):
                 terminal.branch(i)
 
+        # finish-up branching and elongation: grow un-branched terminal segments
+        for terminal in self.terminal_segments:
+            terminal.grow_sustained(N_be)
+
         # elongation only, N_e time bins
         for terminal in self.terminal_segments:
             terminal.grow_only(N_e)
