@@ -18,6 +18,7 @@ Each segment-describing line has 7 space separated fields:
 """
 
 import re
+import os
 import sys
 import logging
 from collections import namedtuple
@@ -51,6 +52,7 @@ class Segment(object):
 
 
 class Neuron(object):
+    name = None
     root = None
     # ref map: segment id -> segment object, for easier lookup/construction
     segments = dict()
@@ -76,6 +78,7 @@ class Neuron(object):
 
 def read_neuron(filename):
     neuron = Neuron()
+    neuron.name = os.path.basename(filename)
     with open(filename, 'r') as fin:
         for line in fin:
             if not re.match('^\d+', line):
@@ -95,6 +98,7 @@ def draw_neuron(neuron):
                      Segment.BASAL: 'b', Segment.APICAL: 'g'}
 
     fig, ax = plt.subplots()
+    length = 0
 
     # plot each segment with line from parent to segment
     for segment in neuron.segments.values():
@@ -106,6 +110,7 @@ def draw_neuron(neuron):
         ax.annotate(str(segment.id), xy=(end.x, end.y), color='#cccccc')
         ax.plot([start.x, end.x], [start.y, end.y], 'o--',
                 color=segment_color[segment.type])
+        length += ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
 
     # create legend lines and labels
     legend_handles = []
@@ -115,6 +120,8 @@ def draw_neuron(neuron):
                 [], [], marker='o', linestyle='--',
                 color=segment_color[typ], label=Segment.typename[typ]))
     plt.legend(handles=legend_handles)
+
+    plt.title("%s (total length = %d)" % (neuron.name, length))
 
     plt.show()
 
