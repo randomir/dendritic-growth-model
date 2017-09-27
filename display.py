@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Parse and plot neurons from [SWC file
 format](http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html).
@@ -16,10 +18,12 @@ Each segment-describing line has 7 space separated fields:
 """
 
 import re
+import sys
 import logging
 from collections import namedtuple
 
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 
 logger = logging.getLogger('display')
@@ -29,6 +33,14 @@ SegmentGeometry = namedtuple('SegmentGeometry', 'x y z r')
 
 class Segment(object):
     "Simple segment definition."
+
+    # segment types (ids and names)
+    SOMA = 1
+    AXON = 2
+    BASAL = 3
+    APICAL = 4
+    typename = {SOMA: 'Soma', AXON: 'Axon',
+                BASAL: 'Basal dendrite', APICAL: 'Apical dendrite'}
 
     def __init__(self, id, type, geometry, parent=None, children=None):
         self.id = id
@@ -78,4 +90,39 @@ def read_neuron(filename):
     return neuron
 
 
-#neuron = read_neuron('../data/smit-rigter-mouse/92-1521.CNG.swc')
+def draw_neuron(neuron):
+    segment_color = {Segment.SOMA: 'r', Segment.AXON: 'k',
+                     Segment.BASAL: 'b', Segment.APICAL: 'g'}
+
+    fig, ax = plt.subplots()
+
+    # plot each segment with line from parent to segment
+    for segment in neuron.segments.values():
+        parent = segment.parent
+        if not parent:
+            continue
+        start = parent.geom
+        end = segment.geom
+        ax.annotate(str(segment.id), xy=(end.x, end.y), color='#cccccc')
+        ax.plot([start.x, end.x], [start.y, end.y], 'o--',
+                color=segment_color[segment.type])
+
+    # create legend lines and labels
+    legend_handles = []
+    for typ in sorted(segment_color.keys()):
+        legend_handles.append(
+            mlines.Line2D(
+                [], [], marker='o', linestyle='--',
+                color=segment_color[typ], label=Segment.typename[typ]))
+    plt.legend(handles=legend_handles)
+
+    plt.show()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Usage: %s NEURON.SWC" % __file__)
+        sys.exit(1)
+    filename = sys.argv[1]
+    neuron = read_neuron(filename)
+    draw_neuron(neuron)
