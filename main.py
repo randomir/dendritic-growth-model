@@ -252,7 +252,7 @@ def simulate_and_measure(params):
 
 
 def simulate(params, n):
-    def add_maybe_lists(x, y):
+    def add_listified(x, y):
         if not isinstance(x, list):
             x = [x]
         if not isinstance(y, list):
@@ -263,7 +263,7 @@ def simulate(params, n):
     for i in range(n):
         measures = simulate_and_measure(params)
         #print("Tree %d measures:" % i, measures)
-        sums = merge(sums, measures, add_maybe_lists, recurse_list=False)
+        sums = merge(sums, measures, add_listified, recurse_list=False)
 
     stats = {}
     for k, v in sums.items():
