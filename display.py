@@ -98,7 +98,8 @@ def draw_neuron(neuron):
                      Segment.BASAL: 'b', Segment.APICAL: 'g'}
 
     fig, ax = plt.subplots()
-    length = 0
+    # total dendritic length
+    tdl = 0
 
     # plot each segment with line from parent to segment
     for segment in neuron.segments.values():
@@ -110,7 +111,8 @@ def draw_neuron(neuron):
         ax.annotate(str(segment.id), xy=(end.x, end.y), color='#cccccc')
         ax.plot([start.x, end.x], [start.y, end.y], 'o--',
                 color=segment_color[segment.type])
-        length += ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
+        if segment.type in (Segment.BASAL, Segment.APICAL):
+            tdl += ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
 
     # create legend lines and labels
     legend_handles = []
@@ -121,7 +123,7 @@ def draw_neuron(neuron):
                 color=segment_color[typ], label=Segment.typename[typ]))
     plt.legend(handles=legend_handles)
 
-    plt.title("%s (total length = %d)" % (neuron.name, length))
+    plt.title("%s (total dendritic length = %d)" % (neuron.name, tdl))
 
     plt.show()
 
