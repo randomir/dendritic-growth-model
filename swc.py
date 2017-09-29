@@ -49,6 +49,21 @@ class LineSegment(object):
         self.parent = parent
         self.children = children or set()
 
+    def __repr__(self):
+        parent_id = self.parent.id if self.parent else None
+        children_ids = sorted(ch.id for ch in self.children)
+        return 'LineSegment(id={self.id!r}, type={self.type!r}, geom={self.geom!r}, '\
+               'parent_id={parent_id!r}, children_ids={children_ids!r})'.format(
+                   self=self, parent_id=parent_id, children_ids=children_ids)
+
+    @property
+    def length(self):
+        if self.parent is None:
+            return
+        start = self.parent.geom
+        end = self.geom
+        return ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
+
 
 class Neuron(object):
     name = None
@@ -111,7 +126,7 @@ def draw_neuron(neuron):
         ax.plot([start.x, end.x], [start.y, end.y], 'o--',
                 color=segment_color[segment.type])
         if segment.type in (LineSegment.BASAL, LineSegment.APICAL):
-            tdl += ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
+            tdl += segment.length
 
     # create legend lines and labels
     legend_handles = []
