@@ -146,7 +146,7 @@ class DendriticTree(object):
     intermediate_segments = None
     root = None
 
-    def __init__(self, B, E, S, N_be, N_e=0,
+    def __init__(self, B=1, E=1, S=0, N_be=1, N_e=0,
                  offset_in=0, mean_in=1, sd_in=1,
                  offset_be=0, mean_be=1, sd_be=1,
                  offset_e=0, mean_e=1, sd_e=1):
@@ -231,3 +231,15 @@ class DendriticTree(object):
         int_seg = sum([s.total_len for s in self.intermediate_segments])
         term_seg = sum([s.total_len for s in self.terminal_segments])
         return int_seg + term_seg
+
+    def stats(self):
+        """Return all model-significant stats upon which model parameters
+        estimation is based."""
+        return dict(
+            degree=self.degree,
+            depth=self.depth,
+            asymmetry_index=self.asymmetry_index,
+            total_length=self.total_length,
+            terminal_lengths=[s.total_len for s in self.terminal_segments],
+            intermediate_lengths=[s.total_len for s in self.intermediate_segments]
+        )

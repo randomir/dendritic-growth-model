@@ -12,14 +12,7 @@ from model import Segment, DendriticTree
 def simulate_and_measure(params):
     tree = DendriticTree(**params)
     tree.grow()
-    return dict(
-        degree=tree.degree,
-        depth=tree.depth,
-        asymmetry_index=tree.asymmetry_index,
-        total_length=tree.total_length,
-        terminal_lengths=[s.total_len for s in tree.terminal_segments],
-        intermediate_lengths=[s.total_len for s in tree.intermediate_segments]
-    )
+    return tree.stats()
 
 
 def simulate(params, n):
