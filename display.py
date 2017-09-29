@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-
 """
-Parse and plot neurons from [SWC file
+Parse and plot neurons from a [SWC file
 format](http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html).
 
 In short, SWC is a text format, with one segment per line, with comment line
 starting with `#`.
 
-Each segment-describing line has 7 space separated fields:
+Each segment-describing line has 7 space-separated fields:
  - id
  - structure id (0: undefined, 1: soma, 2: axon, 3: (basal) dendrite, 4: apical dendrite, 5+: custom); usually used 1, 3 and 4
  - x [um]
@@ -32,7 +31,7 @@ logger = logging.getLogger('display')
 SegmentGeometry = namedtuple('SegmentGeometry', 'x y z r')
 
 
-class Segment(object):
+class LineSegment(object):
     "Simple segment definition."
 
     # segment types (ids and names)
@@ -61,7 +60,7 @@ class Neuron(object):
         geom = SegmentGeometry(x, y, z, r)
         if self.root is None:
             if parent_id == -1 and type == 1:
-                self.segments[id] = self.root = Segment(id, type, geom)
+                self.segments[id] = self.root = LineSegment(id, type, geom)
                 return self.root
             else:
                 raise Exception("Expecting soma root segment first.")
@@ -71,7 +70,7 @@ class Neuron(object):
         except:
             raise Exception("Invalid reference to parent segment.")
         
-        self.segments[id] = segment = Segment(id, type, geom, parent)
+        self.segments[id] = segment = LineSegment(id, type, geom, parent)
         parent.children.add(segment)
         return segment
 
@@ -94,8 +93,8 @@ def read_neuron(filename):
 
 
 def draw_neuron(neuron):
-    segment_color = {Segment.SOMA: 'r', Segment.AXON: 'k',
-                     Segment.BASAL: 'b', Segment.APICAL: 'g'}
+    segment_color = {LineSegment.SOMA: 'r', LineSegment.AXON: 'k',
+                     LineSegment.BASAL: 'b', LineSegment.APICAL: 'g'}
 
     fig, ax = plt.subplots()
     # total dendritic length
@@ -111,7 +110,7 @@ def draw_neuron(neuron):
         ax.annotate(str(segment.id), xy=(end.x, end.y), color='#cccccc')
         ax.plot([start.x, end.x], [start.y, end.y], 'o--',
                 color=segment_color[segment.type])
-        if segment.type in (Segment.BASAL, Segment.APICAL):
+        if segment.type in (LineSegment.BASAL, LineSegment.APICAL):
             tdl += ((end.x - start.x)**2 + (end.y - start.y)**2 + (end.z - start.z)**2)**0.5
 
     # create legend lines and labels
@@ -120,7 +119,7 @@ def draw_neuron(neuron):
         legend_handles.append(
             mlines.Line2D(
                 [], [], marker='o', linestyle='--',
-                color=segment_color[typ], label=Segment.typename[typ]))
+                color=segment_color[typ], label=LineSegment.typename[typ]))
     plt.legend(handles=legend_handles)
 
     plt.title("%s (total dendritic length = %d)" % (neuron.name, tdl))
