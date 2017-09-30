@@ -47,7 +47,7 @@ class LineSegment(object):
         self.type = type
         self.geom = geometry
         self.parent = parent
-        self.children = children or set()
+        self.children = children or []
 
     def __repr__(self):
         parent_id = self.parent.id if self.parent else None
@@ -86,7 +86,7 @@ class Neuron(object):
             raise Exception("Invalid reference to parent segment.")
         
         self.segments[id] = segment = LineSegment(id, type, geom, parent)
-        parent.children.add(segment)
+        parent.children.append(segment)
         return segment
 
 

@@ -185,6 +185,11 @@ class DendriticTree(object):
         self.root = Segment(self)
         self.terminal_segments.add(self.root)
 
+    def empty(self):
+        self.terminal_segments = set()
+        self.intermediate_segments = set()
+        self.root = None
+
     def grow(self, N_be=None, N_e=None):
         """Grow this tree: ``N_be`` iterations of branching and elongation on terminal
         segments, followed by ``N_e`` iterations of elongation only of terminal segments.
