@@ -74,11 +74,10 @@ class Segment(object):
             s += math.pow(2, -self.dendrite.parameters['S'] * terminal.order)
         return s / len(self.dendrite.terminal_segments)
 
-    @counted
-    def branch(self, t):
-        if self.children:
-            return
-        
+    def branching_probability(self):
+        """Calculates the current branching probability, for this segment,
+        based on model parameters for the parent dendrite.
+        """
         Cinv = self.branching_probability_normalization_constant()
         B = self.dendrite.parameters['B']
         E = self.dendrite.parameters['E']
@@ -87,8 +86,13 @@ class Segment(object):
         n_i = len(self.dendrite.terminal_segments)
         gamma = self.order
         p_i = math.pow(2, -S * gamma) * B / Cinv / N_be / math.pow(n_i, E)
+        return p_i
+
+    @counted
+    def branch(self, t):
+        assert(self.children is None)
         
-        if random.random() > p_i:
+        if random.random() > self.branching_probability():
             # no branching
             return
         
