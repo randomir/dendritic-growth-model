@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # -*- python-version >= 3.4 -*-
-import statistics
 from pprint import pprint
-
-from plucky import merge
 
 from utils import counted
 from model import Segment, DendriticTree
+from stats import map_with_stats
 
 
 def simulate_and_measure(params):
@@ -16,27 +14,7 @@ def simulate_and_measure(params):
 
 
 def simulate(params, n):
-    def add_listified(x, y):
-        if not isinstance(x, list):
-            x = [x]
-        if not isinstance(y, list):
-            y = [y]
-        return x + y
-
-    sums = {}
-    for i in range(n):
-        measures = simulate_and_measure(params)
-        #print("Tree %d measures:" % i, measures)
-        sums = merge(sums, measures, add_listified, recurse_list=False)
-
-    stats = {}
-    for k, v in sums.items():
-        stats[k] = dict(total=sum(v),
-                        mean=statistics.mean(v),
-                        median=statistics.median(v),
-                        stdev=statistics.stdev(v))
-    return stats
-
+    return map_with_stats(simulate_and_measure, [[params]] * n)
 
 
 # testing
