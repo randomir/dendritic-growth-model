@@ -5,6 +5,8 @@ For a set of SWC neurons (subset of dendrites), load them in the model [1] and
 calculate stats which can later be used for parameter estimation.
 """
 import statistics
+import glob
+from pprint import pprint
 from plucky import merge
 
 from swc import LineSegment, read_neuron
@@ -85,8 +87,9 @@ def build_dendrite_from_linesegments(root_linesegment):
     return dendrite
 
 
-def load_dendrite_from_swc(filename):
-    neuron = read_neuron(filename)
+
+def load_dendrite_from_swc(path):
+    neuron = read_neuron(path)
     apical = get_apical(neuron)
     dendrite = build_dendrite_from_linesegments(apical)
     return dendrite
@@ -98,3 +101,32 @@ def test_load_dendrite():
     print("Degree at root:", dendrite.root.degree)
     print("Tree asymmetry index:", dendrite.asymmetry_index)
     print("Total length:", dendrite.total_length)
+    print("Stats:", dendrite.stats())
+
+
+
+def dendrite_stats_from_swc(path):
+    neuron = read_neuron(path)
+    apical = get_apical(neuron)
+    dendrite = build_dendrite_from_linesegments(apical)
+    return dendrite.stats()
+
+def youngest_neurons_stats():
+    # youngest neurons 92-* (9 days, 15 neurons)
+    paths = glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc')
+    stats = map_with_stats(dendrite_stats_from_swc, [[path] for path in paths])
+    print("Apical dendrites (9-day old) stats (%d neurons):" % len(paths))
+    pprint(stats)
+
+def oldest_neurons_stats():
+    # oldest neurons 92-* (365 days, 19 neurons)
+    paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
+    stats = map_with_stats(dendrite_stats_from_swc, [[path] for path in paths])
+    print("Apical dendrites (365-day old) stats (%d neurons):" % len(paths))
+    pprint(stats)
+
+
+
+if __name__ == '__main__':
+    youngest_neurons_stats()
+    oldest_neurons_stats()
