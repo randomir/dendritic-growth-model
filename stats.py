@@ -111,26 +111,18 @@ def test_load_dendrite():
 
 
 
-def apical_dendrite_stats_from_swc(path):
-    neuron = read_neuron(path)
-    apical = get_apical_linesegments(neuron)
-    dendrite = build_dendrite_from_linesegments(apical)
-    return dendrite.stats()
+def apical_dendrites_iter(paths):
+    for path in paths:
+        neuron = read_neuron(path)
+        apical_linesegments = get_apical_linesegments(neuron)
+        dendrite = build_dendrite_from_linesegments(apical_linesegments)
+        yield dendrite
 
-def youngest_neurons_apical_stats():
-    # youngest neurons 92-* (9 days, 15 neurons)
-    paths = glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc')
-    stats = map_with_stats(apical_dendrite_stats_from_swc, [[path] for path in paths])
-    print("Apical dendrites (9-day old) stats (%d neurons):" % len(paths))
+def neuronset_apical_stats(paths):
+    dendrites_argset = [[d] for d in apical_dendrites_iter(paths)]
+    stats = map_with_stats(lambda d: d.stats(), dendrites_argset)
+    print("Apical dendrites stats ({} neurons, {} dendrites):".format(len(paths), len(dendrites_argset)))
     pprint(stats)
-
-def oldest_neurons_apical_stats():
-    # oldest neurons 92-* (365 days, 19 neurons)
-    paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
-    stats = map_with_stats(apical_dendrite_stats_from_swc, [[path] for path in paths])
-    print("Apical dendrites (365-day old) stats (%d neurons):" % len(paths))
-    pprint(stats)
-
 
 
 def basal_dendrites_iter(paths):
@@ -155,8 +147,12 @@ if __name__ == '__main__':
     # oldest neurons 92-* (365 days, 19 neurons)
     oldest_paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
 
-    youngest_neurons_apical_stats()
-    oldest_neurons_apical_stats()
-
+    print("\n### Youngest neurons (9 days old) ###\n")
+    neuronset_apical_stats(youngest_paths)
+    print()
     neuronset_basal_stats(youngest_paths)
+
+    print("\n### Oldest neurons (365 days old) ###\n")
+    neuronset_apical_stats(oldest_paths)
+    print()
     neuronset_basal_stats(oldest_paths)
