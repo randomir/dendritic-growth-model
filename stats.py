@@ -40,11 +40,17 @@ def map_with_stats(fn, argset, verbose=False):
     return stats
 
 
-def get_apical(neuron):
-    # get the first apical dendrite
+def get_apical_linesegments(neuron):
+    # get the one and only apical dendrite
     for c in neuron.root.children:
         if c.type == LineSegment.APICAL:
             return c
+
+def get_basal_linesegments_set(neuron):
+    # get all basal dendrites generator (of root line segments)
+    for c in neuron.root.children:
+        if c.type == LineSegment.BASAL:
+            yield c
 
 
 def build_dendrite_from_linesegments(root_linesegment):
@@ -90,7 +96,7 @@ def build_dendrite_from_linesegments(root_linesegment):
 
 def load_dendrite_from_swc(path):
     neuron = read_neuron(path)
-    apical = get_apical(neuron)
+    apical = get_apical_linesegments(neuron)
     dendrite = build_dendrite_from_linesegments(apical)
     return dendrite
 
@@ -105,28 +111,52 @@ def test_load_dendrite():
 
 
 
-def dendrite_stats_from_swc(path):
+def apical_dendrite_stats_from_swc(path):
     neuron = read_neuron(path)
-    apical = get_apical(neuron)
+    apical = get_apical_linesegments(neuron)
     dendrite = build_dendrite_from_linesegments(apical)
     return dendrite.stats()
 
-def youngest_neurons_stats():
+def youngest_neurons_apical_stats():
     # youngest neurons 92-* (9 days, 15 neurons)
     paths = glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc')
-    stats = map_with_stats(dendrite_stats_from_swc, [[path] for path in paths])
+    stats = map_with_stats(apical_dendrite_stats_from_swc, [[path] for path in paths])
     print("Apical dendrites (9-day old) stats (%d neurons):" % len(paths))
     pprint(stats)
 
-def oldest_neurons_stats():
+def oldest_neurons_apical_stats():
     # oldest neurons 92-* (365 days, 19 neurons)
     paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
-    stats = map_with_stats(dendrite_stats_from_swc, [[path] for path in paths])
+    stats = map_with_stats(apical_dendrite_stats_from_swc, [[path] for path in paths])
     print("Apical dendrites (365-day old) stats (%d neurons):" % len(paths))
     pprint(stats)
 
 
 
+def basal_dendrites_iter(paths):
+    for path in paths:
+        neuron = read_neuron(path)
+        basal_linesegments = get_basal_linesegments_set(neuron)
+        for ls in basal_linesegments:
+            dendrite = build_dendrite_from_linesegments(ls)
+            yield dendrite
+
+def neuronset_basal_stats(paths):
+    dendrites_argset = [[d] for d in basal_dendrites_iter(paths)]
+    stats = map_with_stats(lambda d: d.stats(), dendrites_argset)
+    print("Basal dendrites stats ({} neurons, {} dendrites):".format(len(paths), len(dendrites_argset)))
+    pprint(stats)
+
+
 if __name__ == '__main__':
-    youngest_neurons_stats()
-    oldest_neurons_stats()
+    # youngest neurons 92-* (9 days, 15 neurons)
+    youngest_paths = glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc')
+
+    # oldest neurons 92-* (365 days, 19 neurons)
+    oldest_paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
+
+    youngest_neurons_apical_stats()
+    oldest_neurons_apical_stats()
+
+    neuronset_basal_stats(youngest_paths)
+    neuronset_basal_stats(oldest_paths)
