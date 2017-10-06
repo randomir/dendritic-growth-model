@@ -11,7 +11,7 @@ from pprint import pformat
 from plucky import merge, plucks
 
 from swc import LineSegment, read_neuron
-from model import Segment, DendriticTree
+from model import Segment, DendriticTree, InvalidModelParam
 
 
 def map_with_stats(fn, argset, verbose=False):
@@ -34,10 +34,14 @@ def map_with_stats(fn, argset, verbose=False):
 
     stats = {'meta': {'n_samples': len(argset)}}
     for k, v in sums.items():
-        stats[k] = dict(total=sum(v),
-                        mean=statistics.mean(v),
-                        median=statistics.median(v),
-                        stdev=statistics.stdev(v))
+        try:
+            stats[k] = dict(total=sum(v),
+                            mean=statistics.mean(v),
+                            median=statistics.median(v),
+                            stdev=statistics.stdev(v))
+        except:
+            print('failed for params:', argset[0])
+            raise InvalidModelParam
     return stats
 
 
