@@ -6,8 +6,9 @@ calculate stats which can later be used for parameter estimation.
 """
 import statistics
 import glob
-from pprint import pprint
-from plucky import merge
+import textwrap
+from pprint import pformat
+from plucky import merge, plucks
 
 from swc import LineSegment, read_neuron
 from model import Segment, DendriticTree
@@ -31,7 +32,7 @@ def map_with_stats(fn, argset, verbose=False):
             print("Run with args %r measures:" % args, measures)
         sums = merge(sums, measures, add_listified, recurse_list=False)
 
-    stats = {}
+    stats = {'meta': {'n_samples': len(argset)}}
     for k, v in sums.items():
         stats[k] = dict(total=sum(v),
                         mean=statistics.mean(v),
@@ -102,7 +103,8 @@ def load_dendrite_from_swc(path):
 
 
 def test_load_dendrite():
-    dendrite = load_dendrite_from_swc('../data/smit-rigter-mouse/92-1631.CNG.swc')
+    # dendrite = load_dendrite_from_swc('../data/smit-rigter-mouse/92-1631.CNG.swc')
+    dendrite = load_dendrite_from_swc('../data/smit-rigter-mouse/201411.CNG.swc')
     print(dendrite.root.pformat())
     print("Degree at root:", dendrite.root.degree)
     print("Tree asymmetry index:", dendrite.asymmetry_index)
@@ -121,8 +123,7 @@ def apical_dendrites_iter(paths):
 def neuronset_apical_stats(paths):
     dendrites_argset = [[d] for d in apical_dendrites_iter(paths)]
     stats = map_with_stats(lambda d: d.stats(), dendrites_argset)
-    print("Apical dendrites stats ({} neurons, {} dendrites):".format(len(paths), len(dendrites_argset)))
-    pprint(stats)
+    return stats
 
 
 def basal_dendrites_iter(paths):
@@ -136,23 +137,36 @@ def basal_dendrites_iter(paths):
 def neuronset_basal_stats(paths):
     dendrites_argset = [[d] for d in basal_dendrites_iter(paths)]
     stats = map_with_stats(lambda d: d.stats(), dendrites_argset)
-    print("Basal dendrites stats ({} neurons, {} dendrites):".format(len(paths), len(dendrites_argset)))
-    pprint(stats)
+    return stats
+
+
+
+neuronset_paths = {
+    # youngest neurons 92-* (9 days, 15 neurons)
+    'young': glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc'),
+    # middle-aged neurons 20* (60 days, 17 neurons)
+    'middleage': glob.glob('../data/smit-rigter-mouse/20*.CNG.swc'),
+    # oldest neurons 92-* (365 days, 19 neurons)
+    'old': glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
+}
 
 
 if __name__ == '__main__':
-    # youngest neurons 92-* (9 days, 15 neurons)
-    youngest_paths = glob.glob('../data/smit-rigter-mouse/ws*.CNG.swc')
-
-    # oldest neurons 92-* (365 days, 19 neurons)
-    oldest_paths = glob.glob('../data/smit-rigter-mouse/92-*.CNG.swc')
+    def print_stats_for_neuronset(paths):
+        stats = neuronset_apical_stats(paths)
+        print("Apical dendrites stats ({} neurons, {} dendrites):".format(
+            len(paths), plucks(stats, 'meta.n_samples')))
+        print(textwrap.indent(pformat(stats), ' '*4), "\n")
+        stats = neuronset_basal_stats(paths)
+        print("Basal dendrites stats ({} neurons, {} dendrites):".format(
+            len(paths), plucks(stats, 'meta.n_samples')))
+        print(textwrap.indent(pformat(stats), ' '*4))
 
     print("\n### Youngest neurons (9 days old) ###\n")
-    neuronset_apical_stats(youngest_paths)
-    print()
-    neuronset_basal_stats(youngest_paths)
+    print_stats_for_neuronset(neuronset_paths['young'])
+
+    print("\n### Middle-aged neurons (60 days old) ###\n")
+    print_stats_for_neuronset(neuronset_paths['middleage'])
 
     print("\n### Oldest neurons (365 days old) ###\n")
-    neuronset_apical_stats(oldest_paths)
-    print()
-    neuronset_basal_stats(oldest_paths)
+    print_stats_for_neuronset(neuronset_paths['old'])
