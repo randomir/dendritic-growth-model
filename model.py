@@ -151,6 +151,18 @@ class DendriticTree(object):
     intermediate_segments = None
     root = None
 
+    @property
+    def n_terminal(self):
+        return len(self.terminal_segments) if self.terminal_segments else 0
+
+    @property
+    def n_intermediate(self):
+        return len(self.intermediate_segments) if self.intermediate_segments else 0
+
+    @property
+    def n_segments(self):
+        return self.n_intermediate + self.n_terminal
+
     def __init__(self, B=1, E=1, S=0, N_be=1, N_e=0,
                  offset_in=0, mean_in=1, sd_in=1,
                  offset_be=0, mean_be=1, sd_be=1,
@@ -223,9 +235,8 @@ class DendriticTree(object):
 
     @property
     def mean_order(self):
-        n = len(self.intermediate_segments) + len(self.terminal_segments)
         segments = itertools.chain(self.intermediate_segments, self.terminal_segments)
-        return sum([s.order for s in segments]) / n
+        return sum([s.order for s in segments]) / self.n_segments
 
     @property
     def asymmetry_index(self):
@@ -236,11 +247,11 @@ class DendriticTree(object):
             0 = complete symmetry (full binary tree)
             1 = complete asymmetry (list)
         """
-        assert len(self.intermediate_segments) == len(self.terminal_segments) - 1
-        if len(self.intermediate_segments) < 1:
+        assert self.n_intermediate == self.n_terminal - 1
+        if self.n_intermediate < 1:
             return 0
         s = sum([i.partition_asymmetry for i in self.intermediate_segments])
-        return s / len(self.intermediate_segments)
+        return s / self.n_intermediate
 
     @property
     def total_length(self):
@@ -258,5 +269,7 @@ class DendriticTree(object):
             asymmetry_index=self.asymmetry_index,
             total_length=self.total_length,
             terminal_lengths=[s.total_len for s in self.terminal_segments],
-            intermediate_lengths=[s.total_len for s in self.intermediate_segments]
+            intermediate_lengths=[s.total_len for s in self.intermediate_segments],
+            n_terminal=self.n_terminal,
+            n_intermediate=self.n_intermediate,
         )
