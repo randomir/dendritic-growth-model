@@ -12,6 +12,10 @@ import itertools
 from utils import counted
 
 
+class InvalidModelParam(Exception):
+    """Raised when a dendritic tree model is constructed with param out of bounds."""
+
+
 class Segment(object):
     # segment's level in the dendritic tree ("centrifugal order" in [1], represented with gamma)
     order = 0
@@ -178,6 +182,10 @@ class DendriticTree(object):
         - {offset,mean,sd}_be: gamma distribution params for sustained segment elongation rate during branching and elongation phase
         - {offset,mean,sd}_e: gamma distribution params for segment elongation rate during elongation only phase
         """
+        # params validation
+        if B < 0:
+            raise InvalidModelParam("B must be greater than zero")
+
         self.parameters = dict(
             B=B, E=E, S=S, N_be=N_be, N_e=N_e,
 

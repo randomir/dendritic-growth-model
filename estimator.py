@@ -5,6 +5,7 @@ from collections import OrderedDict
 import numpy as np
 from scipy.optimize import minimize
 
+from model import InvalidModelParam
 from stats import neuronset_paths, neuronset_basal_stats
 from main import simulate
 
@@ -53,8 +54,11 @@ if __name__ == '__main__':
             
     def fn(p):
         all_params.update(zip(optim_params, p))
-        p_stats = simulate(all_params, n=1000)
-        return stats_error(p_stats, old_stats)
+        try:
+            p_stats = simulate(all_params, n=1000)
+            return stats_error(p_stats, old_stats)
+        except InvalidModelParam:
+            return np.inf
     
     res = minimize(fn, p0, method='nelder-mead', options={'xtol': 1e-8, 'maxiter': 1000, 'disp': True})
     print(res.x)
