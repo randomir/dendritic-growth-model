@@ -7,6 +7,7 @@ edited by Erik De Schutter, 2001, CRC Press.
 import math
 import random
 import textwrap
+import itertools
 
 from utils import counted
 
@@ -217,8 +218,14 @@ class DendriticTree(object):
         return self.root.degree
 
     @property
-    def depth(self):
+    def max_order(self):
         return max([s.order for s in self.terminal_segments])
+
+    @property
+    def mean_order(self):
+        n = len(self.intermediate_segments) + len(self.terminal_segments)
+        segments = itertools.chain(self.intermediate_segments, self.terminal_segments)
+        return sum([s.order for s in segments]) / n
 
     @property
     def asymmetry_index(self):
@@ -246,7 +253,8 @@ class DendriticTree(object):
         estimation is based."""
         return dict(
             degree=self.degree,
-            depth=self.depth,
+            max_order=self.max_order,
+            mean_order=self.mean_order,
             asymmetry_index=self.asymmetry_index,
             total_length=self.total_length,
             terminal_lengths=[s.total_len for s in self.terminal_segments],
